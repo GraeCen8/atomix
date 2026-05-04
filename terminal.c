@@ -1,8 +1,7 @@
 #include "terminal.h"
-#include "utils.h"
+#include "util.h"
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 // VGA memory location
 volatile uint16_t *vga_buffer = (uint16_t *)0xB8000;
@@ -15,7 +14,7 @@ const int VGA_HEIGHT = 25;
 size_t terminal_row;
 size_t terminal_column;
 uint8_t terminal_color;
-uint16_t *terminal_buffer;
+volatile uint16_t *terminal_buffer;
 
 // Color helper: Combine foreground and background
 // 0x0F is White on Black
@@ -35,7 +34,7 @@ void terminal_initialize(void) {
   terminal_buffer = vga_buffer;
 
   // clear the screen
-  for (site_t y = 0; y < VGA_HEIGHT; y++) {
+  for (size_t y = 0; y < VGA_HEIGHT; y++) {
     for (size_t x = 0; x < VGA_WIDTH; x++) {
       const size_t index = y * VGA_WIDTH + x;
       terminal_buffer[index] = vga_entry(' ', terminal_color);
@@ -53,7 +52,7 @@ void terminal_putchar(char c) {
   } else {
     const size_t index = terminal_row * VGA_WIDTH + terminal_column;
     terminal_buffer[index] = vga_entry((unsigned char)c, terminal_color);
-    terminal_row++;
+    terminal_column++;
   }
 
   // we need to handle scrolling if we hit the bottom
@@ -67,7 +66,7 @@ void terminal_putchar(char c) {
     size_t row;
     for (row = 1; row < VGA_HEIGHT; row++) {
       memcpy((void *)((row - 1) * VGA_WIDTH * 2 + (uint32_t)vga_buffer),
-             (void *)(row * VGA_WIDTH * 2 + (uint32_t)vga_buffer),
+             (const void *)(row * VGA_WIDTH * 2 + (uint32_t)vga_buffer),
              VGA_WIDTH * 2);
     }
     // clear the last line

@@ -1,23 +1,27 @@
-int strlen(const char *str) {
-  int len = 0;
+#include "util.h"
+
+size_t strlen(const char *str) {
+  size_t len = 0;
   while (str[len] != '\0')
     len++;
   return len;
 }
 
-void memcpy(void *dest, const void *src, int count) {
+void *memcpy(void *dest, const void *src, size_t count) {
   char *cdest = (char *)dest;
-  char *csrc = (char *)src;
-  int i;
+  const char *csrc = (const char *)src;
+  size_t i;
   for (i = 0; i < count; i++) {
     cdest[i] = csrc[i];
   }
+  return dest;
 }
 
-void memset(void *dest, char val, int count) {
+void *memset(void *dest, int val, size_t count) {
   char *cdest = (char *)dest;
-  int i;
+  size_t i;
   for (i = 0; i < count; i++) {
-    cdest[i] = val;
+    cdest[i] = (char)val;
   }
+  return dest;
 }
