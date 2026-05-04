@@ -45,10 +45,17 @@ void terminal_initialize(void) {
 void terminal_setcolor(uint8_t color) { terminal_color = color; }
 
 void terminal_putchar(char c) {
-  // Handle the newline if there is one
   if (c == '\n') {
     terminal_column = 0;
     terminal_row++;
+  } else if (c == '\r') {
+    terminal_column = 0;
+  } else if (c == '\b') {
+    if (terminal_column > 0) {
+      terminal_column--;
+      const size_t index = terminal_row * VGA_WIDTH + terminal_column;
+      terminal_buffer[index] = vga_entry(' ', terminal_color);
+    }
   } else {
     const size_t index = terminal_row * VGA_WIDTH + terminal_column;
     terminal_buffer[index] = vga_entry((unsigned char)c, terminal_color);
