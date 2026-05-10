@@ -96,6 +96,7 @@ ISR_ERRCODE 30
 ; ISR31: Reserved - Intel reserved vector.
 ISR_NOERRCODE 31
 
+
 ; IRQ0 -> INT32: Programmable Interval Timer tick interrupt.
 IRQ_STUB 0, 32
 ; IRQ1 -> INT33: PS/2 keyboard controller interrupt (key events).

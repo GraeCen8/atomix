@@ -6,7 +6,7 @@
 // global counter
 volatile uint32_t timer_ticks = 0;
 
-// this is the func called by the idt.c on a 32 intterupt.
+// this is the func called by the idt.c on a 32 interrupt.
 void timer_handler() { timer_ticks++; }
 
 void timer_init(uint32_t frequency) {
