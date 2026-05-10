@@ -1,7 +1,8 @@
 #include "idt.h"
-#include "io.h"
 #include "drivers/keyboard.h"
 #include "drivers/terminal.h"
+#include "io.h"
+#include "timer.h"
 #include "util.h"
 
 static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
@@ -71,6 +72,10 @@ void isr_handler(struct registers *r) {
 void irq_handler(struct registers *r) {
   if (r->int_no == 33) {
     keyboard_handler();
+  }
+
+  if (r->int_no == 32) {
+    timer_handler();
   }
 
   if (r->int_no >= 40) {
