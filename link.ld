@@ -13,4 +13,5 @@ SECTIONS
   .rodata : { *(.rodata*) } :text
   .data : { *(.data) } :data
   .bss : { *(.bss) *(COMMON) } :data
+  __kernel_end = .;
 }
