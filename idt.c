@@ -1,10 +1,11 @@
 #include "idt.h"
 #include "io.h"
-#include "keyboard.h"
-#include "terminal.h"
+#include "drivers/keyboard.h"
+#include "drivers/terminal.h"
 #include "util.h"
 
-static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
+static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
+                         uint8_t flags);
 static void pic_remap(void);
 
 struct idt_entry_struct idt_entries[256];
@@ -33,7 +34,8 @@ void init_idt() {
   idt_flush((uint32_t)&idt_ptr);
 }
 
-static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
+static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
+                         uint8_t flags) {
   idt_entries[num].base_low = (base & 0xFFFF);
   idt_entries[num].base_high = (base >> 16) & 0xFFFF;
   idt_entries[num].sel = sel;

@@ -1,6 +1,6 @@
 #include "gdt.h"
 #include "idt.h"
-#include "terminal.h"
+#include "drivers/terminal.h"
 
 void kmain(void) {
   terminal_initialize();
