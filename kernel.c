@@ -10,7 +10,7 @@ void kmain(void) {
   boot();
 
   while (1) {
-    sleep(TIMER_FREQ / 10);
+    sleep(TIMER_FREQ / 10); // 10 times per second
     terminal_write("tick\n");
   }
 }
