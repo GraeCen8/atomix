@@ -1,7 +1,5 @@
 #include "kmalloc.h"
 
-#include "util.h"
-
 #define KMALLOC_ALIGN 8u
 
 typedef struct block_header {
