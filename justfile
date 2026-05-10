@@ -12,11 +12,13 @@ build:
         nasm -f elf32 "$file" -o "$obj"
     done
 
-    # 2. Compile C files
-    for file in *.c; do
-        obj="${file%.c}.c.o"
-        echo "Compiling $file -> $obj"
-        gcc -m32 -c "$file" -o "$obj"
+    # 2. Compile C files (including subdirectories like drivers/)
+    for file in $(find . -name '*.c' -print); do
+        clean="${file#./}"
+        obj="${clean//\//_}"
+        obj="${obj%.c}.c.o"
+        echo "Compiling $clean -> $obj"
+        gcc -m32 -I. -c "$clean" -o "$obj"
     done
 
     # 3. Link all object files into the kernel
