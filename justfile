@@ -35,10 +35,13 @@ run:
 clean:
     rm -f *.o
 
-# The full pipeline: Build -> Clean (keep objs for linking?) -> Run
-# We remove the 'clean' step from 'go' here because 'build' creates the .o files
-# needed for linking. If you want to clean them after, you can do 'just clean' manually.
+# Build and run without forced clean to keep iteration fast.
 go:
     just build
+    just run
+
+# Clean build and run when you want a fresh artifact set.
+go-clean:
     just clean
+    just build
     just run
