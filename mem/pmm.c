@@ -168,3 +168,9 @@ uint32_t pmm_total_frames(void) { return total_frames; }
 uint32_t pmm_used_frames(void) { return used_frames; }
 
 uint32_t pmm_free_frames(void) { return total_frames - used_frames; }
+
+uint32_t pmm_total_bytes(void) { return pmm_total_frames() * PMM_FRAME_SIZE; }
+
+uint32_t pmm_used_bytes(void) { return pmm_used_frames() * PMM_FRAME_SIZE; }
+
+uint32_t pmm_free_bytes(void) { return pmm_free_frames() * PMM_FRAME_SIZE; }

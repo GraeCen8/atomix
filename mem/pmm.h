@@ -17,5 +17,8 @@ void pmm_unreserve_range(uint32_t start_addr, uint32_t length_bytes);
 uint32_t pmm_total_frames(void);
 uint32_t pmm_used_frames(void);
 uint32_t pmm_free_frames(void);
+uint32_t pmm_total_bytes(void);
+uint32_t pmm_used_bytes(void);
+uint32_t pmm_free_bytes(void);
 
 #endif
