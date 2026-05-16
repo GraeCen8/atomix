@@ -9,6 +9,7 @@
 
 void pmm_init(uint32_t total_memory_bytes, uint32_t reserved_end_addr);
 uint32_t pmm_alloc_frame(void);
+uint32_t pmm_alloc_contiguous(uint32_t frame_count);
 void pmm_free_frame(uint32_t physical_addr);
 void pmm_reserve_range(uint32_t start_addr, uint32_t length_bytes);
 void pmm_unreserve_range(uint32_t start_addr, uint32_t length_bytes);

@@ -63,6 +63,36 @@ uint32_t pmm_alloc_frame(void) {
   return 0;
 }
 
+uint32_t pmm_alloc_contiguous(uint32_t frame_count) {
+  if (frame_count == 0 || used_frames >= total_frames ||
+      frame_count > (total_frames - used_frames)) {
+    return 0;
+  }
+
+  uint32_t run_start = 0;
+  uint32_t run_length = 0;
+
+  for (uint32_t i = 0; i < total_frames; i++) {
+    if (!test_frame(i)) {
+      if (run_length == 0) {
+        run_start = i;
+      }
+      run_length++;
+      if (run_length == frame_count) {
+        for (uint32_t f = run_start; f < (run_start + frame_count); f++) {
+          set_frame(f);
+        }
+        used_frames += frame_count;
+        return run_start * PMM_FRAME_SIZE;
+      }
+    } else {
+      run_length = 0;
+    }
+  }
+
+  return 0;
+}
+
 void pmm_free_frame(uint32_t physical_addr) {
   if ((physical_addr % PMM_FRAME_SIZE) != 0) {
     return;

@@ -29,13 +29,12 @@ void boot(void) {
   init_idt();
 
   pmm_init(total_memory_bytes, (uint32_t)(uintptr_t)&__kernel_end);
-  uint32_t heap_start = pmm_alloc_frame();
+  uint32_t pages = heap_size_bytes / PMM_FRAME_SIZE;
+  if ((heap_size_bytes % PMM_FRAME_SIZE) != 0) {
+    pages++;
+  }
+  uint32_t heap_start = pmm_alloc_contiguous(pages);
   if (heap_start != 0) {
-    uint32_t pages = heap_size_bytes / PMM_FRAME_SIZE;
-    if ((heap_size_bytes % PMM_FRAME_SIZE) != 0) {
-      pages++;
-    }
-    pmm_reserve_range(heap_start, pages * PMM_FRAME_SIZE);
     kmalloc_init(heap_start, pages * PMM_FRAME_SIZE);
   }
 
