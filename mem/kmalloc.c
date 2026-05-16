@@ -4,11 +4,15 @@
 
 typedef struct block_header {
   size_t size;
+  uint32_t magic;
   int free;
   struct block_header *next;
 } block_header_t;
 
 static block_header_t *free_list_head;
+static uintptr_t heap_region_start;
+static uintptr_t heap_region_end;
+static const uint32_t KMALLOC_MAGIC = 0xC0DEFACEu;
 
 static size_t align_up(size_t value) {
   return (value + (KMALLOC_ALIGN - 1u)) & ~(KMALLOC_ALIGN - 1u);
@@ -17,11 +21,16 @@ static size_t align_up(size_t value) {
 void kmalloc_init(uint32_t heap_start, uint32_t heap_size_bytes) {
   if (heap_size_bytes <= sizeof(block_header_t)) {
     free_list_head = 0;
+    heap_region_start = 0;
+    heap_region_end = 0;
     return;
   }
 
+  heap_region_start = (uintptr_t)heap_start;
+  heap_region_end = heap_region_start + heap_size_bytes;
   free_list_head = (block_header_t *)(uintptr_t)heap_start;
   free_list_head->size = heap_size_bytes - sizeof(block_header_t);
+  free_list_head->magic = KMALLOC_MAGIC;
   free_list_head->free = 1;
   free_list_head->next = 0;
 }
@@ -36,6 +45,7 @@ static void split_block(block_header_t *block, size_t size) {
   block_header_t *new_block = (block_header_t *)split_at;
 
   new_block->size = block->size - size - sizeof(block_header_t);
+  new_block->magic = KMALLOC_MAGIC;
   new_block->free = 1;
   new_block->next = block->next;
 
@@ -80,8 +90,23 @@ void kfree(void *ptr) {
     return;
   }
 
-  block_header_t *block =
-      (block_header_t *)((uintptr_t)ptr - sizeof(block_header_t));
+  uintptr_t ptr_addr = (uintptr_t)ptr;
+  if (ptr_addr < (heap_region_start + sizeof(block_header_t)) ||
+      ptr_addr >= heap_region_end) {
+    return;
+  }
+
+  block_header_t *block = (block_header_t *)(ptr_addr - sizeof(block_header_t));
+  uintptr_t block_addr = (uintptr_t)block;
+  if (block_addr < heap_region_start || block_addr >= heap_region_end) {
+    return;
+  }
+
+  if (block->magic != KMALLOC_MAGIC || block->free ||
+      (block_addr + sizeof(block_header_t) + block->size) > heap_region_end) {
+    return;
+  }
+
   block->free = 1;
   coalesce_free_blocks();
 }
