@@ -27,6 +27,9 @@ build:
 
     echo "Done! Run 'just run' to boot."
 
+    # 4. clean up all object files
+    just clean
+
 # Runs the kernel in qemu
 run:
     qemu-system-i386 -kernel kernel
@@ -40,8 +43,3 @@ go:
     just build
     just run
 
-# Clean build and run when you want a fresh artifact set.
-go-clean:
-    just clean
-    just build
-    just run

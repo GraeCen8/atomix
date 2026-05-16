@@ -1,22 +1,17 @@
+# Next Milestone: Tiny Kernel Shell
 
-  What to build/fix next (priority order):
+- [ ] Build a line input buffer with backspace/editing support.
+- [ ] Add a command parser that splits input by spaces.
+- [ ] Implement built-in commands:
+  - `help`
+  - `mem`
+  - `ticks`
+  - `clear`
+  - `reboot` (or `halt`)
+  - `alloc <n>`
+- [ ] Replace the periodic-only `kmain` loop with a prompt-driven shell loop.
 
-  1. Implement remaining IRQ stubs/handlers (IRQ2-IRQ15).
-      - You currently only expose timer + keyboard interrupts.
-      - Files: isr.asm, idt.c
-  2. Harden memory initialization.
-      - heap_start is taken from one allocated frame, then a larger range is reserved assuming contiguity; this is fragile long-
-        term.
-      - Add explicit contiguous-region allocation in PMM or reserve heap range first, then initialize allocator.
-      - Files: kernel.c, mem/pmm.c, mem/kmalloc.c
-  3. Add allocator safety checks.
-      - kfree trusts pointer input and can corrupt heap if given invalid/double-free pointers.
-      - Add basic guards (heap bounds, allocation bit/state, optional magic value).
-      - File: mem/kmalloc.c
-  4. Add basic runtime diagnostics.
-      - Print PMM/heap stats during boot and optionally on timer intervals to validate allocator behavior.
-      - Files: kernel.c, mem/pmm.h
-  5. Improve build ergonomics.
-      - README.md is empty; document build/run/clean and toolchain prerequisites.
-      - Consider making go not always clean before run (or add separate target).
-      - Files: README.md, justfile
+## Follow-ups
+
+- [ ] Add paging (virtual memory).
+- [ ] Add a basic VFS/ramfs.
