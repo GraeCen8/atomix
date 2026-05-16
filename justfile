@@ -18,7 +18,7 @@ build:
         obj="${clean//\//_}"
         obj="${obj%.c}.c.o"
         echo "Compiling $clean -> $obj"
-        gcc -m32 -I. -c "$clean" -o "$obj"
+        gcc -m32 -ffreestanding -fno-stack-protector -fno-pic -I. -c "$clean" -o "$obj"
     done
 
     # 3. Link all object files into the kernel
@@ -42,4 +42,3 @@ clean:
 go:
     just build
     just run
-

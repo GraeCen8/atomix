@@ -3,6 +3,7 @@
 #include "idt.h"
 #include "mem/kmalloc.h"
 #include "mem/pmm.h"
+#include "shell/shell.h"
 #include "timer.h"
 #include <stdint.h>
 
@@ -30,7 +31,7 @@ static void terminal_write_u32(uint32_t value) {
   }
 }
 
-static void print_mem_stats(void) {
+void print_mem_stats(void) {
   terminal_write("PMM frames total/used/free: ");
   terminal_write_u32(pmm_total_frames());
   terminal_write("/");
@@ -51,13 +52,8 @@ static void print_mem_stats(void) {
 void kmain(void) {
   boot();
 
-  uint32_t last_report = 0;
   while (1) {
-    sleep(TIMER_FREQ / 10);
-    if ((timer_get_ticks() - last_report) >= TIMER_FREQ) {
-      last_report = timer_get_ticks();
-      print_mem_stats();
-    }
+    asm volatile("hlt");
   }
 }
 
@@ -76,6 +72,7 @@ void boot(void) {
   if ((heap_size_bytes % PMM_FRAME_SIZE) != 0) {
     pages++;
   }
+
   uint32_t heap_start = pmm_alloc_contiguous(pages);
   if (heap_start != 0) {
     heap_base = heap_start;
@@ -85,9 +82,14 @@ void boot(void) {
   } else {
     terminal_write("Heap allocation failed.\n");
   }
-  print_mem_stats();
 
   timer_init(TIMER_FREQ);
 
-  asm volatile("sti"); // enable interrupts
+  shell_hooks_t shell_hooks;
+  shell_hooks.print_mem_stats = print_mem_stats;
+  shell_hooks.get_ticks = timer_get_ticks;
+  shell_hooks.alloc = kmalloc;
+  shell_init(&shell_hooks);
+
+  asm volatile("sti");
 }
