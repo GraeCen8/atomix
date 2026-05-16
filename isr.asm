@@ -101,6 +101,34 @@ ISR_NOERRCODE 31
 IRQ_STUB 0, 32
 ; IRQ1 -> INT33: PS/2 keyboard controller interrupt (key events).
 IRQ_STUB 1, 33
+; IRQ2 -> INT34: PIC cascade line between master and slave PIC.
+IRQ_STUB 2, 34
+; IRQ3 -> INT35: COM2/COM4 serial ports (legacy).
+IRQ_STUB 3, 35
+; IRQ4 -> INT36: COM1/COM3 serial ports (legacy).
+IRQ_STUB 4, 36
+; IRQ5 -> INT37: LPT2 or sound card (legacy/board-specific).
+IRQ_STUB 5, 37
+; IRQ6 -> INT38: Floppy disk controller (legacy).
+IRQ_STUB 6, 38
+; IRQ7 -> INT39: LPT1 or spurious master PIC IRQ.
+IRQ_STUB 7, 39
+; IRQ8 -> INT40: Real-time clock (RTC).
+IRQ_STUB 8, 40
+; IRQ9 -> INT41: ACPI / redirected IRQ2 (legacy).
+IRQ_STUB 9, 41
+; IRQ10 -> INT42: General-purpose peripheral interrupt.
+IRQ_STUB 10, 42
+; IRQ11 -> INT43: General-purpose peripheral interrupt.
+IRQ_STUB 11, 43
+; IRQ12 -> INT44: PS/2 mouse interrupt.
+IRQ_STUB 12, 44
+; IRQ13 -> INT45: x87 FPU interrupt (legacy).
+IRQ_STUB 13, 45
+; IRQ14 -> INT46: Primary ATA channel interrupt.
+IRQ_STUB 14, 46
+; IRQ15 -> INT47: Secondary ATA channel interrupt.
+IRQ_STUB 15, 47
 
 isr_common_stub:
   pusha

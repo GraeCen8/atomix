@@ -1,13 +1,12 @@
 #include "idt.h"
 #include "drivers/keyboard.h"
 #include "drivers/terminal.h"
-#include "io.h"
+#include "pic.h"
 #include "timer.h"
 #include "util.h"
 
 static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
                          uint8_t flags);
-static void pic_remap(void);
 
 struct idt_entry_struct idt_entries[256];
 struct idt_ptr_struct idt_ptr;
@@ -48,6 +47,20 @@ extern void isr30(void);
 extern void isr31(void);
 extern void irq0(void);
 extern void irq1(void);
+extern void irq2(void);
+extern void irq3(void);
+extern void irq4(void);
+extern void irq5(void);
+extern void irq6(void);
+extern void irq7(void);
+extern void irq8(void);
+extern void irq9(void);
+extern void irq10(void);
+extern void irq11(void);
+extern void irq12(void);
+extern void irq13(void);
+extern void irq14(void);
+extern void irq15(void);
 
 void init_idt() {
   idt_ptr.limit = sizeof(struct idt_entry_struct) * 256 - 1;
@@ -55,7 +68,7 @@ void init_idt() {
 
   memset(&idt_entries, 0, sizeof(struct idt_entry_struct) * 256);
 
-  pic_remap();
+  pic_remap(0x20, 0x28);
 
   idt_set_gate(0, (uint32_t)isr0, 0x08, 0x8E);
   idt_set_gate(1, (uint32_t)isr1, 0x08, 0x8E);
@@ -91,6 +104,20 @@ void init_idt() {
   idt_set_gate(31, (uint32_t)isr31, 0x08, 0x8E);
   idt_set_gate(32, (uint32_t)irq0, 0x08, 0x8E);
   idt_set_gate(33, (uint32_t)irq1, 0x08, 0x8E);
+  idt_set_gate(34, (uint32_t)irq2, 0x08, 0x8E);
+  idt_set_gate(35, (uint32_t)irq3, 0x08, 0x8E);
+  idt_set_gate(36, (uint32_t)irq4, 0x08, 0x8E);
+  idt_set_gate(37, (uint32_t)irq5, 0x08, 0x8E);
+  idt_set_gate(38, (uint32_t)irq6, 0x08, 0x8E);
+  idt_set_gate(39, (uint32_t)irq7, 0x08, 0x8E);
+  idt_set_gate(40, (uint32_t)irq8, 0x08, 0x8E);
+  idt_set_gate(41, (uint32_t)irq9, 0x08, 0x8E);
+  idt_set_gate(42, (uint32_t)irq10, 0x08, 0x8E);
+  idt_set_gate(43, (uint32_t)irq11, 0x08, 0x8E);
+  idt_set_gate(44, (uint32_t)irq12, 0x08, 0x8E);
+  idt_set_gate(45, (uint32_t)irq13, 0x08, 0x8E);
+  idt_set_gate(46, (uint32_t)irq14, 0x08, 0x8E);
+  idt_set_gate(47, (uint32_t)irq15, 0x08, 0x8E);
 
   idt_flush((uint32_t)&idt_ptr);
 }
@@ -102,24 +129,6 @@ static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
   idt_entries[num].sel = sel;
   idt_entries[num].always0 = 0;
   idt_entries[num].flags = flags;
-}
-
-static void pic_remap(void) {
-  unsigned char a1 = inb(0x21);
-  unsigned char a2 = inb(0xA1);
-
-  outb(0x20, 0x11);
-  outb(0xA0, 0x11);
-  outb(0x21, 0x20);
-  outb(0xA1, 0x28);
-  outb(0x21, 0x04);
-  outb(0xA1, 0x02);
-  outb(0x21, 0x01);
-  outb(0xA1, 0x01);
-
-  // Unmask only IRQ0 (timer) and IRQ1 (keyboard) on master.
-  outb(0x21, (a1 & 0xFC));
-  outb(0xA1, a2);
 }
 
 void isr_handler(struct registers *r) {
@@ -178,8 +187,7 @@ void irq_handler(struct registers *r) {
     timer_handler();
   }
 
-  if (r->int_no >= 40) {
-    outb(0xA0, 0x20);
+  if (r->int_no >= 32 && r->int_no <= 47) {
+    pic_send_eoi((uint8_t)(r->int_no - 32));
   }
-  outb(0x20, 0x20);
 }
