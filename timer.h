@@ -7,11 +7,8 @@
 // anything above 100 Hz is fine
 #define TIMER_FREQ 1000
 
-// Initializes the PIT to a specific frequency
+// Initializes the PIT and IRQ0 callback to a specific frequency
 void timer_init(uint32_t frequency);
-
-// The callback function called by the assembly stub
-void timer_handler();
 
 // Returns the number of ticks since boot. mainly not used directly
 uint32_t timer_get_ticks();

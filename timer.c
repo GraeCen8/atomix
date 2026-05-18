@@ -1,13 +1,15 @@
 #include "timer.h"
-#include "drivers/keyboard.h"
+#include "idt.h"
 #include "io.h"
 #include <stdint.h>
 
 // global counter
 volatile uint32_t timer_ticks = 0;
 
-// this is the func called by the idt.c on a 32 interrupt.
-void timer_handler() { timer_ticks++; }
+static void timer_irq_handler(struct registers *r) {
+  (void)r;
+  timer_ticks++;
+}
 
 void timer_init(uint32_t frequency) {
   // the pit runs at 1193180 Hz by default.
@@ -30,6 +32,7 @@ void timer_init(uint32_t frequency) {
 
   outb(0x40, low);
   outb(0x40, high);
+  irq_install_handler(0, timer_irq_handler);
 }
 
 uint32_t timer_get_ticks() { return timer_ticks; }
