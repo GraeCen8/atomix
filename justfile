@@ -34,6 +34,16 @@ build:
 run:
     qemu-system-i386 -kernel kernel
 
+# Runs QEMU halted for source-level GDB debugging and auto-attaches GDB.
+debug:
+    #!/usr/bin/env bash
+    set -e
+    qemu-system-i386 -kernel kernel -s -S &
+    qemu_pid=$!
+    trap "kill $qemu_pid 2>/dev/null || true" EXIT
+    sleep 0.2
+    gdb -q -x scripts/qemu.gdb
+
 # Cleans up all .o files (object files) and the kernel binary
 clean:
     rm -f *.o
