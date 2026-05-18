@@ -1,8 +1,6 @@
 #include "idt.h"
-#include "drivers/keyboard.h"
 #include "drivers/terminal.h"
 #include "pic.h"
-#include "timer.h"
 #include "util.h"
 
 static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
@@ -10,6 +8,7 @@ static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
 
 struct idt_entry_struct idt_entries[256];
 struct idt_ptr_struct idt_ptr;
+static irq_handler_t irq_handlers[16];
 
 extern void idt_flush(uint32_t idt_ptr);
 
@@ -179,15 +178,30 @@ void isr_handler(struct registers *r) {
 }
 
 void irq_handler(struct registers *r) {
-  if (r->int_no == 33) {
-    keyboard_handler();
-  }
-
-  if (r->int_no == 32) {
-    timer_handler();
+  if (r->int_no >= 32 && r->int_no <= 47) {
+    int irq = (int)(r->int_no - 32);
+    if (irq_handlers[irq] != 0) {
+      irq_handlers[irq](r);
+    }
   }
 
   if (r->int_no >= 32 && r->int_no <= 47) {
     pic_send_eoi((uint8_t)(r->int_no - 32));
   }
+}
+
+void irq_install_handler(int irq, irq_handler_t handler) {
+  if (irq < 0 || irq > 15) {
+    return;
+  }
+
+  irq_handlers[irq] = handler;
+}
+
+void irq_uninstall_handler(int irq) {
+  if (irq < 0 || irq > 15) {
+    return;
+  }
+
+  irq_handlers[irq] = 0;
 }

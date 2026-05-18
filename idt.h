@@ -24,8 +24,12 @@ struct registers {
   uint32_t eip, cs, eflags, useresp, ss;
 };
 
+typedef void (*irq_handler_t)(struct registers *r);
+
 void init_idt();
 void isr_handler(struct registers *r); // this is called on interrupts
 void irq_handler(struct registers *r); // handle hardware (eg: Keyboard)
+void irq_install_handler(int irq, irq_handler_t handler);
+void irq_uninstall_handler(int irq);
 
 #endif
