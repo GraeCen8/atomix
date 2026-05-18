@@ -1,3 +1,4 @@
+#include "drivers/keyboard.h"
 #include "drivers/terminal.h"
 #include "gdt.h"
 #include "idt.h"
@@ -84,6 +85,7 @@ void boot(void) {
   }
 
   timer_init(TIMER_FREQ);
+  keyboard_init();
 
   shell_hooks_t shell_hooks;
   shell_hooks.print_mem_stats = print_mem_stats;

@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "../idt.h"
 #include "../io.h"
 #include "../shell/shell.h"
 
@@ -9,7 +10,8 @@ static unsigned char scancode_to_char[128] = {
     'j', 'k', 'l',  ';',  '\'', '`', 0,   '\\', 'z', 'x', 'c', 'v',
     'b', 'n', 'm',  ',',  '.',  '/', 0,   '*',  0,   ' '};
 
-void keyboard_handler(void) {
+static void keyboard_irq_handler(struct registers *r) {
+  (void)r;
   unsigned char scancode = inb(0x60);
 
   if ((scancode & 0x80u) != 0) {
@@ -21,3 +23,5 @@ void keyboard_handler(void) {
     shell_handle_key(c);
   }
 }
+
+void keyboard_init(void) { irq_install_handler(1, keyboard_irq_handler); }
