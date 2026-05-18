@@ -76,7 +76,9 @@ void *kmalloc(size_t size) {
 static void coalesce_free_blocks(void) {
   block_header_t *curr = free_list_head;
   while (curr != 0 && curr->next != 0) {
-    if (curr->free && curr->next->free) {
+    uintptr_t curr_end =
+        (uintptr_t)curr + sizeof(block_header_t) + curr->size;
+    if (curr->free && curr->next->free && curr_end == (uintptr_t)curr->next) {
       curr->size += sizeof(block_header_t) + curr->next->size;
       curr->next = curr->next->next;
     } else {
@@ -110,3 +112,5 @@ void kfree(void *ptr) {
   block->free = 1;
   coalesce_free_blocks();
 }
+
+void kmalloc_defrag(void) { coalesce_free_blocks(); }
