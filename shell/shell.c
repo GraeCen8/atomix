@@ -195,6 +195,23 @@ void shell_init(const shell_hooks_t *hooks) {
 }
 
 void shell_handle_key(char c) {
+  if (c == 3) {
+    terminal_write("^C\n");
+    g_input_len = 0;
+    g_input[0] = '\0';
+    shell_prompt();
+    return;
+  }
+
+  if (c == 12) {
+    terminal_initialize();
+    shell_prompt();
+    if (g_input_len > 0) {
+      terminal_write(g_input);
+    }
+    return;
+  }
+
   if (c == '\r' || c == '\n') {
     terminal_putchar('\n');
     g_input[g_input_len] = '\0';
