@@ -110,7 +110,7 @@ static void execute_command(char *line) {
   }
 
   if (streq(argv[0], "help")) {
-    terminal_write("Built-ins: help mem ticks clear halt alloc <n>\n");
+    terminal_write("Built-ins: help, mem, ticks, clear, halt, alloc <n>\n");
     return;
   }
 
