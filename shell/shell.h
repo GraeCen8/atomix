@@ -8,6 +8,7 @@ typedef struct shell_hooks {
   void (*print_mem_stats)(void);
   uint32_t (*get_ticks)(void);
   void *(*alloc)(size_t size);
+  int (*run_memtest)(void);
 } shell_hooks_t;
 
 void shell_init(const shell_hooks_t *hooks);

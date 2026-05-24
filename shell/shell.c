@@ -110,7 +110,8 @@ static void execute_command(char *line) {
   }
 
   if (streq(argv[0], "help")) {
-    terminal_write("Built-ins: help, mem, ticks, clear, halt, alloc <n>\n");
+    terminal_write(
+        "Built-ins: help, mem, memtest, ticks, clear, halt, alloc <n>\n");
     return;
   }
 
@@ -129,6 +130,20 @@ static void execute_command(char *line) {
       terminal_write("0");
     }
     terminal_write("\n");
+    return;
+  }
+
+  if (streq(argv[0], "memtest")) {
+    if (g_hooks.run_memtest == 0) {
+      terminal_write("memtest unavailable\n");
+      return;
+    }
+
+    if (g_hooks.run_memtest()) {
+      terminal_write("memtest: PASS\n");
+    } else {
+      terminal_write("memtest: FAIL\n");
+    }
     return;
   }
 
@@ -184,7 +199,10 @@ static void execute_command(char *line) {
 void shell_init(const shell_hooks_t *hooks) {
   memset(&g_hooks, 0, sizeof(g_hooks));
   if (hooks != 0) {
-    g_hooks = *hooks;
+    g_hooks.print_mem_stats = hooks->print_mem_stats;
+    g_hooks.get_ticks = hooks->get_ticks;
+    g_hooks.alloc = hooks->alloc;
+    g_hooks.run_memtest = hooks->run_memtest;
   }
 
   g_input_len = 0;

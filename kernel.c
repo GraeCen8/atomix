@@ -50,6 +50,75 @@ void print_mem_stats(void) {
   }
 }
 
+static int run_memtest(void) {
+  int ok = 1;
+  terminal_write("memtest: starting\n");
+
+  uint32_t used_before = pmm_used_frames();
+  uint32_t a = pmm_alloc_frame();
+  uint32_t b = pmm_alloc_frame();
+  if (a == 0 || b == 0 || b != (a + PMM_FRAME_SIZE)) {
+    terminal_write("memtest: pmm_alloc_frame failed\n");
+    ok = 0;
+  }
+
+  uint32_t run = pmm_alloc_contiguous(3);
+  if (run == 0) {
+    terminal_write("memtest: pmm_alloc_contiguous failed\n");
+    ok = 0;
+  }
+
+  if (a != 0) {
+    pmm_free_frame(a);
+  }
+  if (b != 0) {
+    pmm_free_frame(b);
+  }
+  if (run != 0) {
+    pmm_free_frame(run);
+    pmm_free_frame(run + PMM_FRAME_SIZE);
+    pmm_free_frame(run + (2u * PMM_FRAME_SIZE));
+  }
+
+  if (pmm_used_frames() != used_before) {
+    terminal_write("memtest: pmm frame accounting mismatch\n");
+    ok = 0;
+  }
+
+  void *p1 = kmalloc(64);
+  void *p2 = kmalloc(128);
+  void *p3 = kmalloc(256);
+  if (p1 == 0 || p2 == 0 || p3 == 0) {
+    terminal_write("memtest: kmalloc basic allocations failed\n");
+    ok = 0;
+  }
+
+  kfree(p2);
+  void *p2_reuse = kmalloc(96);
+  if (p2_reuse == 0) {
+    terminal_write("memtest: kmalloc reuse failed\n");
+    ok = 0;
+  }
+
+  kfree(p1);
+  kfree(p3);
+  kfree(p2_reuse);
+  kmalloc_defrag();
+
+  if (heap_size > 0) {
+    void *big = kmalloc((size_t)(heap_size / 2u));
+    if (big == 0) {
+      terminal_write("memtest: kmalloc coalesce/large alloc failed\n");
+      ok = 0;
+    } else {
+      kfree(big);
+    }
+  }
+
+  terminal_write("memtest: done\n");
+  return ok;
+}
+
 void kmain(void) {
   boot();
 
@@ -91,6 +160,7 @@ void boot(void) {
   shell_hooks.print_mem_stats = print_mem_stats;
   shell_hooks.get_ticks = timer_get_ticks;
   shell_hooks.alloc = kmalloc;
+  shell_hooks.run_memtest = run_memtest;
   shell_init(&shell_hooks);
 
   asm volatile("sti");

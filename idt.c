@@ -5,6 +5,8 @@
 
 static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
                          uint8_t flags);
+static void terminal_write_u32(uint32_t value);
+static void terminal_write_hex(uint32_t value);
 
 struct idt_entry_struct idt_entries[256];
 struct idt_ptr_struct idt_ptr;
@@ -130,6 +132,33 @@ static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
   idt_entries[num].flags = flags;
 }
 
+static void terminal_write_u32(uint32_t value) {
+  if (value == 0) {
+    terminal_putchar('0');
+    return;
+  }
+
+  uint32_t div = 1000000000u;
+  while (div > 0 && (value / div) == 0) {
+    div /= 10u;
+  }
+
+  while (div > 0) {
+    uint32_t digit = value / div;
+    terminal_putchar((char)('0' + digit));
+    value %= div;
+    div /= 10u;
+  }
+}
+
+static void terminal_write_hex(uint32_t value) {
+  static const char *hex = "0123456789ABCDEF";
+  terminal_write("0x");
+  for (int i = 7; i >= 0; i--) {
+    terminal_putchar(hex[(value >> (i * 4)) & 0xFu]);
+  }
+}
+
 void isr_handler(struct registers *r) {
   static const char *exception_messages[] = {
       "Division By Zero",
@@ -172,6 +201,17 @@ void isr_handler(struct registers *r) {
   } else {
     terminal_write("Unknown");
   }
+  terminal_write("\n");
+  terminal_write("int=");
+  terminal_write_u32(r->int_no);
+  terminal_write(" err=");
+  terminal_write_hex(r->err_code);
+  terminal_write(" eip=");
+  terminal_write_hex(r->eip);
+  terminal_write(" cs=");
+  terminal_write_hex(r->cs);
+  terminal_write(" eflags=");
+  terminal_write_hex(r->eflags);
   terminal_write("\n");
   while (1)
     ;
