@@ -12,6 +12,31 @@ static uint32_t align_up(uint32_t value, uint32_t align) {
   return (value + align - 1u) & ~(align - 1u);
 }
 
+static uint32_t clamped_end_frame(uint32_t start_addr, uint32_t length_bytes) {
+  uint32_t max_addr = total_frames * PMM_FRAME_SIZE;
+  uint32_t capped_len = length_bytes;
+
+  if (start_addr >= max_addr) {
+    return total_frames;
+  }
+
+  if (capped_len > (max_addr - start_addr)) {
+    capped_len = max_addr - start_addr;
+  }
+
+  uint32_t end_exclusive = start_addr + capped_len;
+  if (end_exclusive == max_addr) {
+    return total_frames;
+  }
+
+  uint32_t aligned = align_up(end_exclusive, PMM_FRAME_SIZE);
+  uint32_t end = aligned / PMM_FRAME_SIZE;
+  if (end > total_frames) {
+    end = total_frames;
+  }
+  return end;
+}
+
 static void set_frame(uint32_t frame_index) {
   pmm_bitmap[frame_index / 32u] |= (1u << (frame_index % 32u));
 }
@@ -117,15 +142,10 @@ void pmm_reserve_range(uint32_t start_addr, uint32_t length_bytes) {
   }
 
   uint32_t start = start_addr / PMM_FRAME_SIZE;
-  uint32_t end_addr = align_up(start_addr + length_bytes, PMM_FRAME_SIZE);
-  uint32_t end = end_addr / PMM_FRAME_SIZE;
+  uint32_t end = clamped_end_frame(start_addr, length_bytes);
 
   if (start >= total_frames) {
     return;
-  }
-
-  if (end > total_frames) {
-    end = total_frames;
   }
 
   for (uint32_t i = start; i < end; i++) {
@@ -142,15 +162,10 @@ void pmm_unreserve_range(uint32_t start_addr, uint32_t length_bytes) {
   }
 
   uint32_t start = start_addr / PMM_FRAME_SIZE;
-  uint32_t end_addr = align_up(start_addr + length_bytes, PMM_FRAME_SIZE);
-  uint32_t end = end_addr / PMM_FRAME_SIZE;
+  uint32_t end = clamped_end_frame(start_addr, length_bytes);
 
   if (start >= total_frames) {
     return;
-  }
-
-  if (end > total_frames) {
-    end = total_frames;
   }
 
   for (uint32_t i = start; i < end; i++) {
