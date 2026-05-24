@@ -36,7 +36,7 @@ void kmalloc_init(uint32_t heap_start, uint32_t heap_size_bytes) {
 }
 
 static void split_block(block_header_t *block, size_t size) {
-  if (block->size <= size + sizeof(block_header_t)) {
+  if (block->size <= size + sizeof(block_header_t) + KMALLOC_ALIGN) {
     return;
   }
 
@@ -98,12 +98,22 @@ void kfree(void *ptr) {
     return;
   }
 
-  block_header_t *block = (block_header_t *)(ptr_addr - sizeof(block_header_t));
-  uintptr_t block_addr = (uintptr_t)block;
-  if (block_addr < heap_region_start || block_addr >= heap_region_end) {
+  block_header_t *block = 0;
+  block_header_t *curr = free_list_head;
+  while (curr != 0) {
+    uintptr_t payload = (uintptr_t)curr + sizeof(block_header_t);
+    if (payload == ptr_addr) {
+      block = curr;
+      break;
+    }
+    curr = curr->next;
+  }
+
+  if (block == 0) {
     return;
   }
 
+  uintptr_t block_addr = (uintptr_t)block;
   if (block->magic != KMALLOC_MAGIC || block->free ||
       (block_addr + sizeof(block_header_t) + block->size) > heap_region_end) {
     return;
