@@ -1,7 +1,6 @@
 #include "pmm.h"
 #include "util.h"
 
-#define PMM_MAX_FRAMES (PMM_MAX_MEMORY_BYTES / PMM_FRAME_SIZE)
 #define PMM_BITMAP_U32S ((PMM_MAX_FRAMES + 31u) / 32u)
 
 static uint32_t pmm_bitmap[PMM_BITMAP_U32S];
@@ -12,9 +11,9 @@ static uint32_t align_up(uint32_t value, uint32_t align) {
   return (value + align - 1u) & ~(align - 1u);
 }
 
-static uint32_t clamped_end_frame(uint32_t start_addr, uint32_t length_bytes) {
-  uint32_t max_addr = total_frames * PMM_FRAME_SIZE;
-  uint32_t capped_len = length_bytes;
+static uint32_t clamped_end_frame(uint32_t start_addr, uint64_t length_bytes) {
+  uint64_t max_addr = (uint64_t)total_frames * PMM_FRAME_SIZE;
+  uint64_t capped_len = length_bytes;
 
   if (start_addr >= max_addr) {
     return total_frames;
@@ -24,12 +23,13 @@ static uint32_t clamped_end_frame(uint32_t start_addr, uint32_t length_bytes) {
     capped_len = max_addr - start_addr;
   }
 
-  uint32_t end_exclusive = start_addr + capped_len;
+  uint64_t end_exclusive = (uint64_t)start_addr + capped_len;
   if (end_exclusive == max_addr) {
     return total_frames;
   }
 
-  uint32_t aligned = align_up(end_exclusive, PMM_FRAME_SIZE);
+  uint64_t aligned = (end_exclusive + (PMM_FRAME_SIZE - 1u)) &
+                     ~((uint64_t)PMM_FRAME_SIZE - 1ull);
   uint32_t end = aligned / PMM_FRAME_SIZE;
   if (end > total_frames) {
     end = total_frames;
@@ -49,13 +49,13 @@ static int test_frame(uint32_t frame_index) {
   return (pmm_bitmap[frame_index / 32u] & (1u << (frame_index % 32u))) != 0;
 }
 
-void pmm_init(uint32_t total_memory_bytes, uint32_t reserved_end_addr) {
-  uint32_t capped_bytes = total_memory_bytes;
+void pmm_init(uint64_t total_memory_bytes, uint32_t reserved_end_addr) {
+  uint64_t capped_bytes = total_memory_bytes;
   if (capped_bytes > PMM_MAX_MEMORY_BYTES) {
     capped_bytes = PMM_MAX_MEMORY_BYTES;
   }
 
-  total_frames = capped_bytes / PMM_FRAME_SIZE;
+  total_frames = (uint32_t)(capped_bytes / PMM_FRAME_SIZE);
   used_frames = total_frames;
 
   memset(pmm_bitmap, 0xFF, sizeof(pmm_bitmap));
@@ -65,7 +65,7 @@ void pmm_init(uint32_t total_memory_bytes, uint32_t reserved_end_addr) {
   }
 
   uint32_t free_start = align_up(reserved_end_addr, PMM_FRAME_SIZE);
-  if (free_start >= capped_bytes) {
+  if ((uint64_t)free_start >= capped_bytes) {
     return;
   }
 
@@ -136,7 +136,7 @@ void pmm_free_frame(uint32_t physical_addr) {
   }
 }
 
-void pmm_reserve_range(uint32_t start_addr, uint32_t length_bytes) {
+void pmm_reserve_range(uint32_t start_addr, uint64_t length_bytes) {
   if (length_bytes == 0 || total_frames == 0) {
     return;
   }
@@ -156,7 +156,7 @@ void pmm_reserve_range(uint32_t start_addr, uint32_t length_bytes) {
   }
 }
 
-void pmm_unreserve_range(uint32_t start_addr, uint32_t length_bytes) {
+void pmm_unreserve_range(uint32_t start_addr, uint64_t length_bytes) {
   if (length_bytes == 0 || total_frames == 0) {
     return;
   }
@@ -184,8 +184,14 @@ uint32_t pmm_used_frames(void) { return used_frames; }
 
 uint32_t pmm_free_frames(void) { return total_frames - used_frames; }
 
-uint32_t pmm_total_bytes(void) { return pmm_total_frames() * PMM_FRAME_SIZE; }
+uint64_t pmm_total_bytes(void) {
+  return (uint64_t)pmm_total_frames() * PMM_FRAME_SIZE;
+}
 
-uint32_t pmm_used_bytes(void) { return pmm_used_frames() * PMM_FRAME_SIZE; }
+uint64_t pmm_used_bytes(void) {
+  return (uint64_t)pmm_used_frames() * PMM_FRAME_SIZE;
+}
 
-uint32_t pmm_free_bytes(void) { return pmm_free_frames() * PMM_FRAME_SIZE; }
+uint64_t pmm_free_bytes(void) {
+  return (uint64_t)pmm_free_frames() * PMM_FRAME_SIZE;
+}

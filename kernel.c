@@ -8,10 +8,20 @@
 #include "timer.h"
 #include <stdint.h>
 
-void boot(void);
+void boot(uint64_t total_memory_bytes);
 extern uint8_t __kernel_end;
 static uint32_t heap_base;
 static uint32_t heap_size;
+static uint64_t detected_ram_bytes;
+
+#define MULTIBOOT_BOOTLOADER_MAGIC 0x2BADB002u
+#define MULTIBOOT_INFO_FLAG_MEM (1u << 0)
+
+typedef struct multiboot_info {
+  uint32_t flags;
+  uint32_t mem_lower;
+  uint32_t mem_upper;
+} multiboot_info_t;
 
 static void terminal_write_u32(uint32_t value) {
   if (value == 0) {
@@ -39,6 +49,12 @@ void print_mem_stats(void) {
   terminal_write_u32(pmm_used_frames());
   terminal_write("/");
   terminal_write_u32(pmm_free_frames());
+  terminal_write("\n");
+
+  terminal_write("RAM detected bytes: ");
+  terminal_write_u32((uint32_t)detected_ram_bytes);
+  terminal_write(" (low 32 bits), MiB=");
+  terminal_write_u32((uint32_t)(detected_ram_bytes / (1024ull * 1024ull)));
   terminal_write("\n");
 
   if (heap_size > 0) {
@@ -119,16 +135,35 @@ static int run_memtest(void) {
   return ok;
 }
 
-void kmain(void) {
-  boot();
+static uint64_t detect_total_memory_bytes(uint32_t mb_magic,
+                                          uint32_t mb_info_addr) {
+  if (mb_magic != MULTIBOOT_BOOTLOADER_MAGIC || mb_info_addr == 0) {
+    return PMM_MAX_MEMORY_BYTES;
+  }
+
+  const multiboot_info_t *mbi = (const multiboot_info_t *)(uintptr_t)mb_info_addr;
+  if ((mbi->flags & MULTIBOOT_INFO_FLAG_MEM) == 0) {
+    return PMM_MAX_MEMORY_BYTES;
+  }
+
+  uint64_t total = ((uint64_t)mbi->mem_lower + (uint64_t)mbi->mem_upper) * 1024ull;
+  if (total == 0 || total > PMM_MAX_MEMORY_BYTES) {
+    return PMM_MAX_MEMORY_BYTES;
+  }
+
+  return total;
+}
+
+void kmain(uint32_t mb_magic, uint32_t mb_info_addr) {
+  uint64_t total_memory_bytes = detect_total_memory_bytes(mb_magic, mb_info_addr);
+  boot(total_memory_bytes);
 
   while (1) {
     asm volatile("hlt");
   }
 }
 
-void boot(void) {
-  const uint32_t total_memory_bytes = PMM_MAX_MEMORY_BYTES;
+void boot(uint64_t total_memory_bytes) {
   const uint32_t heap_size_bytes = 1024u * 1024u;
 
   terminal_initialize();
@@ -137,6 +172,7 @@ void boot(void) {
   init_gdt();
   init_idt();
 
+  detected_ram_bytes = total_memory_bytes;
   pmm_init(total_memory_bytes, (uint32_t)(uintptr_t)&__kernel_end);
   uint32_t pages = heap_size_bytes / PMM_FRAME_SIZE;
   if ((heap_size_bytes % PMM_FRAME_SIZE) != 0) {

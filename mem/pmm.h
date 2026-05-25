@@ -5,20 +5,21 @@
 #include <stdint.h>
 
 #define PMM_FRAME_SIZE 4096u
-#define PMM_MAX_MEMORY_BYTES (64u * 1024u * 1024u)
+#define PMM_MAX_MEMORY_BYTES (0x100000000ull)
+#define PMM_MAX_FRAMES ((uint32_t)(PMM_MAX_MEMORY_BYTES / PMM_FRAME_SIZE))
 
-void pmm_init(uint32_t total_memory_bytes, uint32_t reserved_end_addr);
+void pmm_init(uint64_t total_memory_bytes, uint32_t reserved_end_addr);
 uint32_t pmm_alloc_frame(void);
 uint32_t pmm_alloc_contiguous(uint32_t frame_count);
 void pmm_free_frame(uint32_t physical_addr);
-void pmm_reserve_range(uint32_t start_addr, uint32_t length_bytes);
-void pmm_unreserve_range(uint32_t start_addr, uint32_t length_bytes);
+void pmm_reserve_range(uint32_t start_addr, uint64_t length_bytes);
+void pmm_unreserve_range(uint32_t start_addr, uint64_t length_bytes);
 
 uint32_t pmm_total_frames(void);
 uint32_t pmm_used_frames(void);
 uint32_t pmm_free_frames(void);
-uint32_t pmm_total_bytes(void);
-uint32_t pmm_used_bytes(void);
-uint32_t pmm_free_bytes(void);
+uint64_t pmm_total_bytes(void);
+uint64_t pmm_used_bytes(void);
+uint64_t pmm_free_bytes(void);
 
 #endif
