@@ -3,6 +3,7 @@
 #include "gdt.h"
 #include "idt.h"
 #include "mem/kmalloc.h"
+#include "mem/paging.h"
 #include "mem/pmm.h"
 #include "shell/shell.h"
 #include "timer.h"
@@ -187,6 +188,13 @@ void boot(uint64_t total_memory_bytes) {
     terminal_write("Heap initialized.\n");
   } else {
     terminal_write("Heap allocation failed.\n");
+  }
+
+  paging_init((uint32_t)(uintptr_t)&__kernel_end, heap_base, heap_size);
+  if (paging_enabled()) {
+    terminal_write("Paging enabled.\n");
+  } else {
+    terminal_write("Paging init failed.\n");
   }
 
   timer_init(TIMER_FREQ);
