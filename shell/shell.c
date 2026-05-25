@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "../drivers/terminal.h"
+#include "../mem/paging.h"
 #include "../util.h"
 
 #define SHELL_INPUT_MAX 128
@@ -67,6 +68,48 @@ static int parse_u32(const char *s, uint32_t *out) {
   return 1;
 }
 
+static int parse_u32_auto(const char *s, uint32_t *out) {
+  if (s == 0 || s[0] == '\0') {
+    return 0;
+  }
+
+  uint32_t value = 0;
+  uint32_t base = 10;
+  size_t i = 0;
+
+  if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+    base = 16;
+    i = 2;
+    if (s[i] == '\0') {
+      return 0;
+    }
+  }
+
+  while (s[i] != '\0') {
+    uint32_t digit;
+
+    if (s[i] >= '0' && s[i] <= '9') {
+      digit = (uint32_t)(s[i] - '0');
+    } else if (base == 16 && s[i] >= 'a' && s[i] <= 'f') {
+      digit = (uint32_t)(s[i] - 'a' + 10);
+    } else if (base == 16 && s[i] >= 'A' && s[i] <= 'F') {
+      digit = (uint32_t)(s[i] - 'A' + 10);
+    } else {
+      return 0;
+    }
+
+    if (digit >= base) {
+      return 0;
+    }
+
+    value = (value * base) + digit;
+    i++;
+  }
+
+  *out = value;
+  return 1;
+}
+
 static int split_args(char *line, char **argv, int argv_max) {
   int argc = 0;
   size_t i = 0;
@@ -111,7 +154,17 @@ static void execute_command(char *line) {
 
   if (streq(argv[0], "help")) {
     terminal_write(
-        "Built-ins: help, mem, memtest, ticks, clear, halt, alloc <n>\n");
+        "Built-ins: help, mem, memtest, ticks, clear, halt, alloc <n>, vm, "
+        "translate <addr>\n");
+    return;
+  }
+
+  if (streq(argv[0], "vm")) {
+    terminal_write("paging: ");
+    terminal_write(paging_enabled() ? "enabled" : "disabled");
+    terminal_write(" mapped_pages=");
+    terminal_write_u32(paging_mapped_pages());
+    terminal_write("\n");
     return;
   }
 
@@ -187,6 +240,32 @@ static void execute_command(char *line) {
     terminal_write_u32(bytes);
     terminal_write(" bytes at ");
     terminal_write_hex((uint32_t)(uintptr_t)ptr);
+    terminal_write("\n");
+    return;
+  }
+
+  if (streq(argv[0], "translate")) {
+    if (argc < 2) {
+      terminal_write("usage: translate <addr>\n");
+      return;
+    }
+
+    uint32_t virt = 0;
+    if (!parse_u32_auto(argv[1], &virt)) {
+      terminal_write("translate: expected decimal or 0xHEX address\n");
+      return;
+    }
+
+    uint32_t phys = 0;
+    if (!paging_translate(virt, &phys)) {
+      terminal_write("unmapped\n");
+      return;
+    }
+
+    terminal_write("virt ");
+    terminal_write_hex(virt);
+    terminal_write(" -> phys ");
+    terminal_write_hex(phys);
     terminal_write("\n");
     return;
   }
