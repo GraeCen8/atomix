@@ -7,6 +7,7 @@ static void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel,
                          uint8_t flags);
 static void terminal_write_u32(uint32_t value);
 static void terminal_write_hex(uint32_t value);
+static uint32_t read_cr2(void);
 
 struct idt_entry_struct idt_entries[256];
 struct idt_ptr_struct idt_ptr;
@@ -159,6 +160,12 @@ static void terminal_write_hex(uint32_t value) {
   }
 }
 
+static uint32_t read_cr2(void) {
+  uint32_t value;
+  asm volatile("mov %%cr2, %0" : "=r"(value));
+  return value;
+}
+
 void isr_handler(struct registers *r) {
   static const char *exception_messages[] = {
       "Division By Zero",
@@ -213,6 +220,20 @@ void isr_handler(struct registers *r) {
   terminal_write(" eflags=");
   terminal_write_hex(r->eflags);
   terminal_write("\n");
+
+  if (r->int_no == 14) {
+    uint32_t fault_addr = read_cr2();
+    terminal_write("page fault addr=");
+    terminal_write_hex(fault_addr);
+    terminal_write(" flags=");
+    terminal_write((r->err_code & 0x1u) ? "P" : "NP");
+    terminal_write((r->err_code & 0x2u) ? "|W" : "|R");
+    terminal_write((r->err_code & 0x4u) ? "|U" : "|S");
+    terminal_write((r->err_code & 0x8u) ? "|RSVD" : "|OK");
+    terminal_write((r->err_code & 0x10u) ? "|IF" : "|DATA");
+    terminal_write("\n");
+  }
+
   while (1)
     ;
 }
